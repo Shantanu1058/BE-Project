@@ -1,0 +1,23 @@
+<launch>
+
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+    <arg name="world_name" value="$(find robot_description)/src/worlds/hospital.world"/> 
+    <arg name="paused" value="false"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="gui" value="true"/>
+    <arg name="recording" value="false"/>
+    <arg name="debug" value="false"/>
+  </include>
+  <arg name="x" default="0"/>
+  <arg name="y" default="0"/>
+  <arg name="z" default="0.0"/>
+  <arg name="paused" value="true"/>
+    
+  
+   <node name="mybot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen"
+          args="-urdf -param robot_description -model volta_bot -x $(arg x) -y $(arg y) -z $(arg z)" />
+    <param name="robot_description" command="$(find xacro)/xacro --inorder '$(find robot_description)/volta/volta_description/urdf/volta.xacro'" />
+    
+     <node pkg="teleop_twist_keyboard" type="teleop_twist_keyboard.py" name="teleop_twist_keyboard"/>
+    
+</launch>

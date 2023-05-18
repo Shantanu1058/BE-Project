@@ -1,0 +1,8 @@
+
+
+<robot name="volta_robot" xmlns:xacro="https://ros.org/wiki/xacro">
+
+  <xacro:include filename="$(find robot_description)/volta/volta_description/urdf/volta.urdf.xacro" />
+  <xacro:volta_robot/>
+
+</robot>

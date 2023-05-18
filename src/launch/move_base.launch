@@ -1,0 +1,28 @@
+<launch>
+  <!-- Arguments -->
+  <include file="$(find robot_description)/src/launch/amcl.launch"></include>
+  <include file="$(find robot_description)/src/launch/rviz.launch"></include>
+  
+  <arg name="cmd_vel_topic" default="/cmd_vel" />
+  <arg name="odom_topic" default="odom" />
+  <arg name="move_forward_only" default="false"/>
+
+   <arg name="map_file" default="$(find robot_description)/src/maps/hospital.yaml"/>
+	
+  <node pkg="map_server" name="map_server" type="map_server" args="$(arg map_file)" />
+  <node pkg="tf" type="static_transform_publisher" name="map_to_odom" args="0 0 0 0 0 0 map odom 30" />
+
+  <!-- move_base -->
+  <node pkg="move_base" type="move_base" respawn="false" name="move_base" output="screen">
+    <param name="base_local_planner" value="dwa_local_planner/DWAPlannerROS" />
+    <rosparam file="$(find robot_description)/src/param/costmap_common_params.yaml" command="load" ns="global_costmap" />
+    <rosparam file="$(find robot_description)/src/param/costmap_common_params.yaml" command="load" ns="local_costmap" />
+    <rosparam file="$(find robot_description)/src/param/local_costmap_params.yaml" command="load" />
+    <rosparam file="$(find robot_description)/src/param/global_costmap_params.yaml" command="load" />
+    <rosparam file="$(find robot_description)/src/param/move_base_params.yaml" command="load" />
+    <rosparam file="$(find robot_description)/src/param/dwa_local_planner_params.yaml" command="load" />
+    <remap from="cmd_vel" to="$(arg cmd_vel_topic)"/>
+    <remap from="odom" to="$(arg odom_topic)"/>
+    <param name="DWAPlannerROS/min_vel_x" value="0.0" if="$(arg move_forward_only)" />
+  </node>
+</launch>

@@ -1,0 +1,147 @@
+<?xml version="1.0"?>
+
+
+<robot name="volta_robot" xmlns:xacro="https://ros.org/wiki/xacro">
+    <!-- xacro includes -->
+    <xacro:include filename="$(find robot_description)/volta/volta_description/urdf/volta_properties.xacro"/>
+    <xacro:include filename="$(find robot_description)/volta/volta_description/urdf/components/wheel_volta.urdf.xacro"/>
+    <xacro:include filename="$(find robot_description)/volta/volta_description/urdf/components/caster_volta.urdf.xacro"/>
+
+    <!-- xacro properties -->
+    <xacro:property name="PI" value="3.14159"/>
+
+    <!-- xacro args -->
+    <xacro:arg name="robot_namespace" default="/" />
+    <xacro:arg name="tf_pre" default=""/>
+    <xacro:arg name="lidar_enabled" default="true"/>
+    <xacro:arg name="rplidar_a3_enabled" default="true"/>
+    <xacro:arg name="hokuyo_ust_10lx_enabled" default="false"/>
+    <xacro:arg name="imu_enabled" default="true"/>
+    <xacro:arg name="camera_enabled" default="true"/>
+    <xacro:arg name="intel_d435i_enabled" default="true"/>
+    <xacro:arg name="orbbec_astra_pro_enabled" default="false"/>
+
+    <xacro:macro name="volta_robot">
+        <!-- Footprint -->
+        <link name="footprint"/>
+
+        <!-- Joint from footprint to base link(chassis) -->
+        <joint name="base_footprint_joint" type="fixed">
+            <origin xyz="0 0 ${base_underside_h}" rpy="0 0 0" />
+            <parent link="base_link" />
+            <child link="footprint" />
+        </joint>
+
+        <!-- Chassis a.k.a base_link -->
+        <link name="base_link">
+            <visual name="visual_base">
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://robot_description/volta/volta_description/meshes/volta.dae"/>
+                </geometry>
+            </visual>
+           <!--  <visual name="visual_logo">
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://robot_description/volta/volta_description/meshes/volta_logo.dae"/>
+                </geometry>
+            </visual> -->
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0" />
+                <geometry>
+                    <mesh filename="package://robot_description/volta/volta_description/meshes/volta.dae"/>
+                </geometry>
+            </collision>
+            <inertial>
+		            <origin xyz ="0.00701 0.0000 0.08382"/>
+                <mass value="${base_mass}"/>
+                <inertia ixx="${base_ixx}" ixy="${base_ixy}" ixz="${base_ixz}" iyy="${base_iyy}" iyz="${base_iyz}" izz="${base_izz}"/>
+            </inertial>
+        </link>
+
+        <!-- Wheel -->
+        <xacro:volta_wheel wheel_prefix="right">
+            <origin xyz="0.0 ${-wheel_joint_y_abs} ${wheel_joint_z_abs}" rpy="0 0 0" />
+        </xacro:volta_wheel>
+
+        <xacro:volta_wheel wheel_prefix="left">
+            <origin xyz="0.0 ${wheel_joint_y_abs} ${wheel_joint_z_abs}" rpy="0 0 0" />
+        </xacro:volta_wheel>
+
+        <!-- Caster wheels -->
+        <xacro:volta_caster caster_prefix="front_left">
+            <origin xyz="${caster_joint_x} ${caster_joint_y} ${caster_joint_z}" rpy="0 0 0" />
+        </xacro:volta_caster>
+
+        <xacro:volta_caster caster_prefix="front_right">
+            <origin xyz="${caster_joint_x} ${-caster_joint_y} ${caster_joint_z}" rpy="0 0 0" />
+        </xacro:volta_caster>
+
+        <xacro:volta_caster caster_prefix="rear_right">
+            <origin xyz="${-caster_joint_x} ${-caster_joint_y} ${caster_joint_z}" rpy="0 0 0" />
+        </xacro:volta_caster>
+
+        <xacro:volta_caster caster_prefix="rear_left">
+            <origin xyz="${-caster_joint_x} ${caster_joint_y} ${caster_joint_z}" rpy="0 0 0" />
+        </xacro:volta_caster>
+
+        <!-- IMU -->
+        <xacro:if value="$(arg imu_enabled)">
+            <xacro:include filename="$(find robot_description)/volta/volta_description/urdf/accessories/imu_volta.urdf.xacro"/>
+            <xacro:imu robot_namespace="$(arg robot_namespace)" tf_pre="$(arg tf_pre)"></xacro:imu>
+        </xacro:if>
+
+        <!-- LIDAR -->
+        <xacro:if value="$(arg lidar_enabled)">
+            <xacro:include filename="$(find robot_description)/volta/volta_description/urdf/accessories/lidar_volta.urdf.xacro"/>
+            <xacro:lidar rplidar_a3_enabled="$(arg rplidar_a3_enabled)" hokuyo_ust_10lx_enabled="$(arg hokuyo_ust_10lx_enabled)" robot_namespace="$(arg robot_namespace)">  </xacro:lidar>
+        </xacro:if>
+
+        <!-- Camera -->
+        <xacro:if value="$(arg camera_enabled)">
+            <xacro:include filename="$(find robot_description)/volta/volta_description/urdf/accessories/camera_volta.urdf.xacro"/>
+            <xacro:camera_ intel_d435i_enabled="$(arg intel_d435i_enabled)" orbbec_astra_pro_enabled="$(arg orbbec_astra_pro_enabled)" robot_namespace="$(arg robot_namespace)"></xacro:camera_>
+        </xacro:if>
+
+        <!-- Robot Gazebo tag -->
+        <gazebo>
+            <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+                <robotNamespace>$(arg robot_namespace)</robotNamespace>
+                <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+            </plugin>
+        </gazebo>
+        
+        <gazebo reference="base_link">
+
+            <mu1>0.02</mu1>
+            <mu2>0.02</mu2>
+            <selfCollide>true</selfCollide>
+            <gravity>true</gravity>
+            <static>false</static>
+        </gazebo>
+        
+        <gazebo>
+            <plugin filename="libgazebo_ros_control.so" name="control"/>
+        </gazebo>
+        
+        
+        <gazebo>
+        <plugin filename="libgazebo_ros_diff_drive.so" name="   differential_drive_controller">
+      <alwaysOn>true</alwaysOn>
+      <updateRate>20</updateRate>
+      <leftJoint>left_wheel_joint</leftJoint>
+      <rightJoint>right_wheel_joint</rightJoint>
+      <torque>100</torque>
+      <commandTopic>cmd_vel</commandTopic>
+      <odometryTopic>odom</odometryTopic>
+      <odometryFrame>odom</odometryFrame>
+      <robotBaseFrame>base_link</robotBaseFrame>
+      <publishWheelTF>true</publishWheelTF>
+      <odometrySource>world</odometrySource>
+      <publishTf>1</publishTf>
+    </plugin>
+  </gazebo>
+
+    </xacro:macro>
+
+</robot>
